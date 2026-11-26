@@ -17,6 +17,7 @@ import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.router.LanguageModelQueryRouter;
+import dev.langchain4j.rag.query.transformer.CompressingQueryTransformer;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
@@ -70,7 +71,6 @@ public class LlmClient implements Serializable {
 
         EmbeddingModel embeddingModel = new BgeSmallEnV15EmbeddingModel();
 
-        // Deux documents, chacun dans sa propre base vectorielle.
         ContentRetriever retrieverRag =
                 creerRetriever("rag.pdf", embeddingModel);
 
@@ -98,8 +98,14 @@ public class LlmClient implements Serializable {
         LanguageModelQueryRouter router =
                 new LanguageModelQueryRouter(model, sources);
 
+        // Reformule la question en utilisant l'historique.
+        CompressingQueryTransformer transformer =
+                new CompressingQueryTransformer(model);
+
+        // Transformation, puis routage, puis récupération des passages.
         DefaultRetrievalAugmentor augmentor =
                 DefaultRetrievalAugmentor.builder()
+                        .queryTransformer(transformer)
                         .queryRouter(router)
                         .build();
 
